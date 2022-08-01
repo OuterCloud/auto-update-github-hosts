@@ -5,10 +5,18 @@ import difflib
 from pprint import pprint
 
 desktop_path = "/Users/tianyou.lan/Desktop"
-logging.basicConfig(
-    filename=f'{desktop_path}/update_github_hosts.log',
-    format='%(asctime)s %(message)s',
-    level=logging.DEBUG)
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+file_handler = logging.FileHandler(f'{desktop_path}/update_github_hosts.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 host_file = "/etc/hosts"
 
 
@@ -25,16 +33,16 @@ def update_github_hosts():
         return
     new_content = new_content.rstrip()
     if new_content == content:
-        logging.info("no change to update")
+        logger.info("no change to update")
         return
     d = difflib.Differ()
     diff = d.compare(content, new_content)
     pprint(list(diff))
-    logging.info("changes updated")
+    logger.info(f"changes updated\noriginal:\n{content}\nnew:\n{new_content}")
     with open(host_file, "w") as wf:
-        wf.write(new_content.strip("/n"))
+        wf.write(new_content)
     with open(host_file, "r") as rnf:
-        logging.info(rnf.read())
+        logger.info(rnf.read())
 
 
 if __name__ == '__main__':
