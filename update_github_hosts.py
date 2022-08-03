@@ -2,17 +2,25 @@ import os
 import requests
 import re
 import logging
-import difflib
 
 
-class GithubHostsUpdater:
+class GitHubHostsUpdater:
     def __init__(self, hosts_file_path, log_dir_path):
+        """
+        Init method
+        :param hosts_file_path: path of the hosts file
+        :param log_dir_path: path of the directory of the log file
+        """
         self.hosts_file_path = hosts_file_path
         self.log_dir_path = log_dir_path
         self.logger = None
         self.init_logger()
 
     def init_logger(self):
+        """
+        Init the log module
+        :return: None
+        """
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
@@ -28,25 +36,46 @@ class GithubHostsUpdater:
         self.logger = logger
 
     def run_cmd(self, command: str):
+        """
+        Execute the command in terminal
+        :param command: command string
+        :return: None
+        """
         with os.popen(command) as a:
             self.logger.info(a.read())
 
     def flush_dns_cache(self):
+        """
+        Flush the local cache of dns
+        :return: None
+        """
         self.run_cmd("killall -HUP mDNSResponder")
         self.run_cmd("killall mDNSResponderHelper")
         self.run_cmd("dscacheutil -flushcache")
 
-    def update_github_hosts(self):
+    def sync_github_hosts_to_remote(self):
+        """
+        Sync the local hosts content of GitHub to remote
+        :return: None
+        """
+        r = requests.get("https://hosts.gitcdn.top/hosts.txt")
+        self.update_github_hosts(r.text)
+
+    def clear_github_hosts(self):
+        """
+        Clear the local hosts content of GitHub
+        :return:
+        """
+        self.update_github_hosts("# fetch-github-hosts begin\n# fetch-github-hosts end")
+
+    def update_github_hosts(self, replace_text: str):
         """
         According to the resolution: https://github.com/Licoy/fetch-github-hosts
         :return:
         """
-        # get the hosts content from remote
-        r = requests.get("https://hosts.gitcdn.top/hosts.txt")
-        # get the content from local hosts file
         with open(self.hosts_file_path, "r") as rf:
             content = rf.read()
-            new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", r.text, content)
+            new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", replace_text, content)
             new_content = new_content.rstrip()
         if not new_content:
             self.logger.info("no new content")
@@ -54,14 +83,9 @@ class GithubHostsUpdater:
         if new_content == content:
             self.logger.info("no change to update")
             return
-        # show the difference between old hosts and new hosts
-        for line in difflib.unified_diff(content, new_content, fromfile='old_hosts', tofile='new_hosts', lineterm=''):
-            self.logger.info(line)
         self.logger.info(f"changes updated\noriginal:\n{content}\nnew:\n{new_content}")
-        # update the content of local hosts file
         with open(self.hosts_file_path, "w") as wf:
             wf.write(new_content)
-        # flush the dns local cache
         self.flush_dns_cache()
 
 
@@ -69,7 +93,8 @@ if __name__ == '__main__':
     '''
         You need to modify the log_dir_path to your own custom path
     '''
-    updater = GithubHostsUpdater(
+    updater = GitHubHostsUpdater(
         hosts_file_path="/etc/hosts",
         log_dir_path="/Users/tianyou.lan/Desktop")
-    updater.update_github_hosts()
+    # updater.clear_github_hosts()
+    updater.sync_github_hosts_to_remote()
