@@ -88,6 +88,11 @@ class GitHubHostsUpdater:
             wf.write(new_content)
         self.flush_dns_cache()
 
+    def show_local_hosts(self):
+        with open(self.hosts_file_path, "r") as rf:
+            content = rf.read()
+            self.logger.info(content)
+
 
 if __name__ == '__main__':
     '''
@@ -98,3 +103,4 @@ if __name__ == '__main__':
         log_dir_path="/Users/tianyou.lan/Desktop")
     # updater.clear_github_hosts()
     updater.sync_github_hosts_to_remote()
+    updater.show_local_hosts()
