@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import logging
+from os.path import abspath, dirname
 
 
 class GitHubHostsUpdater:
@@ -99,12 +100,9 @@ class GitHubHostsUpdater:
 
 
 if __name__ == '__main__':
-    '''
-        You need to modify the log_dir_path to your own custom path
-    '''
+    curr_dir_path = abspath(dirname(__file__))
     updater = GitHubHostsUpdater(
         hosts_file_path="/etc/hosts",
-        log_dir_path="/Users/tianyou.lan/Desktop")
-    # updater.clear_github_hosts()
+        log_dir_path=curr_dir_path)
     updater.sync_github_hosts_to_remote()
     updater.show_local_hosts()
