@@ -16,7 +16,7 @@ class GitHubHostsUpdater:
         self.logger = None
         self.init_logger()
 
-    def init_logger(self):
+    def init_logger(self) -> None:
         """
         Init the log module
         :return: None
@@ -35,7 +35,7 @@ class GitHubHostsUpdater:
         logger.addHandler(file_handler)
         self.logger = logger
 
-    def run_cmd(self, command: str):
+    def run_cmd(self, command: str) -> None:
         """
         Execute the command in terminal
         :param command: command string
@@ -44,7 +44,7 @@ class GitHubHostsUpdater:
         with os.popen(command) as a:
             self.logger.info(a.read())
 
-    def flush_dns_cache(self):
+    def flush_dns_cache(self) -> None:
         """
         Flush the local cache of dns
         :return: None
@@ -53,7 +53,7 @@ class GitHubHostsUpdater:
         self.run_cmd("killall mDNSResponderHelper")
         self.run_cmd("dscacheutil -flushcache")
 
-    def sync_github_hosts_to_remote(self):
+    def sync_github_hosts_to_remote(self) -> None:
         """
         Sync the local hosts content of GitHub to remote
         :return: None
@@ -61,14 +61,14 @@ class GitHubHostsUpdater:
         r = requests.get("https://hosts.gitcdn.top/hosts.txt")
         self.update_github_hosts(r.text)
 
-    def clear_github_hosts(self):
+    def clear_github_hosts(self) -> None:
         """
         Clear the local hosts content of GitHub
         :return:
         """
         self.update_github_hosts("# fetch-github-hosts begin\n# fetch-github-hosts end")
 
-    def update_github_hosts(self, replace_text: str):
+    def update_github_hosts(self, replace_text: str) -> None:
         """
         According to the resolution: https://github.com/Licoy/fetch-github-hosts
         :return:
@@ -88,7 +88,11 @@ class GitHubHostsUpdater:
             wf.write(new_content)
         self.flush_dns_cache()
 
-    def show_local_hosts(self):
+    def show_local_hosts(self) -> None:
+        """
+        Show local hosts
+        :return:
+        """
         with open(self.hosts_file_path, "r") as rf:
             content = rf.read()
             self.logger.info(content)
