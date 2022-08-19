@@ -76,6 +76,7 @@ class GitHubHostsUpdater:
         """
         with open(self.hosts_file_path, "r") as rf:
             content = rf.read()
+            new_content = re.sub(r"<!DOCTYPE html>(.|\n)+</html>", replace_text, content)
             new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", replace_text, content)
             new_content = new_content.rstrip()
         if not new_content:
@@ -84,7 +85,7 @@ class GitHubHostsUpdater:
         if new_content == content:
             self.logger.info("no change to update")
             return
-        self.logger.info(f"changes updated\noriginal:\n{content}\nnew:\n{new_content}")
+        self.logger.info(f"changes updated\norigin:\n{content}\nnew:\n{new_content}")
         with open(self.hosts_file_path, "w") as wf:
             wf.write(new_content)
         self.flush_dns_cache()
