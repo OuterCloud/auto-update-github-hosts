@@ -59,7 +59,9 @@ class GitHubHostsUpdater:
         Sync the local hosts content of GitHub to remote
         :return: None
         """
-        r = requests.get("https://hosts.gitcdn.top/hosts.txt")
+        host = "hosts.gitcdn.top"
+        url = f"http://{host}/hosts.txt"
+        r = requests.get(url)
         self.update_github_hosts(r.text)
 
     def clear_github_hosts(self) -> None:
@@ -77,7 +79,8 @@ class GitHubHostsUpdater:
         with open(self.hosts_file_path, "r") as rf:
             content = rf.read()
             new_content = re.sub(r"<!DOCTYPE html>(.|\n)+</html>", replace_text, content)
-            new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", replace_text, content)
+            new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", replace_text,
+                                 new_content)
             new_content = new_content.rstrip()
         if not new_content:
             self.logger.info("no new content")
