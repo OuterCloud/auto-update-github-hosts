@@ -1,11 +1,15 @@
+"""Auto update local github hosts"""
 import os
-import requests
 import re
 import logging
 from os.path import abspath, dirname
 
+import requests
+
 
 class GitHubHostsUpdater:
+    """Github hosts updater"""
+
     def __init__(self, hosts_file_path, log_dir_path):
         """
         Init method
@@ -24,9 +28,13 @@ class GitHubHostsUpdater:
         """
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
-                                      datefmt='%Y-%m-%d %H:%M:%S')
-        file_handler = logging.FileHandler(f'{self.log_dir_path}/update_github_hosts.log')
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s: - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        file_handler = logging.FileHandler(
+            f"{self.log_dir_path}/update_github_hosts.log"
+        )
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         console_handler = logging.StreamHandler()
@@ -61,8 +69,12 @@ class GitHubHostsUpdater:
         """
         host = "hosts.gitcdn.top"
         url = f"http://{host}/hosts.txt"
-        r = requests.get(url)
-        self.update_github_hosts(r.text)
+        r = requests.get(url, timeout=5)
+        content = r.text
+        if "404 Not Found" in content:
+            self.logger.info("can not connect to github")
+            return
+        self.update_github_hosts(content)
 
     def clear_github_hosts(self) -> None:
         """
@@ -76,11 +88,16 @@ class GitHubHostsUpdater:
         According to the resolution: https://github.com/Licoy/fetch-github-hosts
         :return:
         """
-        with open(self.hosts_file_path, "r") as rf:
+        with open(self.hosts_file_path, "r", encoding="utf-8") as rf:
             content = rf.read()
-            new_content = re.sub(r"<!DOCTYPE html>(.|\n)+</html>", replace_text, content)
-            new_content = re.sub(r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end", replace_text,
-                                 new_content)
+            new_content = re.sub(
+                r"<!DOCTYPE html>(.|\n)+</html>", replace_text, content
+            )
+            new_content = re.sub(
+                r"# fetch-github-hosts begin(.|\n)+# fetch-github-hosts end",
+                replace_text,
+                new_content,
+            )
             new_content = new_content.rstrip()
         if not new_content:
             self.logger.info("no new content")
@@ -88,8 +105,8 @@ class GitHubHostsUpdater:
         if new_content == content:
             self.logger.info("no change to update")
             return
-        self.logger.info(f"changes updated\norigin:\n{content}\nnew:\n{new_content}")
-        with open(self.hosts_file_path, "w") as wf:
+        self.logger.info("changes updated\norigin:\n%s\nnew:\n%s", content, new_content)
+        with open(self.hosts_file_path, "w", encoding="utf-8") as wf:
             wf.write(new_content)
         self.flush_dns_cache()
 
@@ -98,15 +115,15 @@ class GitHubHostsUpdater:
         Show local hosts
         :return:
         """
-        with open(self.hosts_file_path, "r") as rf:
+        with open(self.hosts_file_path, "r", encoding="utf-8") as rf:
             content = rf.read()
             self.logger.info(content)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     curr_dir_path = abspath(dirname(__file__))
     updater = GitHubHostsUpdater(
-        hosts_file_path="/etc/hosts",
-        log_dir_path=curr_dir_path)
+        hosts_file_path="/etc/hosts", log_dir_path=curr_dir_path
+    )
     updater.sync_github_hosts_to_remote()
     updater.show_local_hosts()
